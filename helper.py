@@ -59,6 +59,15 @@ def login():
     cookies = session.cookies.get_dict()
     return cookies
 
+def join_mat(mat_1, mat_2):
+    matrix = []
+    for i in range(len(mat_1)):
+        row = mat_1[i]
+        row.extend(mat_2[i])
+        matrix.append(row)
+    return matrix
+
+
 def get_table(url, cookies):
     soup = getSoup(url, cookies)
     matrix = []
@@ -68,6 +77,9 @@ def get_table(url, cookies):
         for td in tr.find_all('td'):
             row.append(td.text.strip())
         matrix.append(row)
+    for index in range(len(matrix)):
+        while not len(matrix[index]) == len(matrix[1]):
+            matrix[index].append("")
     return matrix
 
 def get_table_cust(url, cookies):
@@ -86,6 +98,9 @@ def get_table_cust(url, cookies):
         # print(row)
         matrix.append(row)
 
+    for index in range(len(matrix)):
+        while not len(matrix[index]) == len(matrix[1]):
+            matrix[index].append("")
     return matrix
 
 def make_snap(mat_1, mat_2, mat_3, sheet, tab):
@@ -105,18 +120,10 @@ def make_snap(mat_1, mat_2, mat_3, sheet, tab):
 
     for i in range(max_length):
         row = []
-        while not len(mat_1[i]) == len(mat_1[1]):
-            mat_1[i].append("")
         row.extend(mat_1[i])
         row.append("")
-
-        while not len(mat_2[i]) == len(mat_2[1]):
-            mat_2[i].append("")
         row.extend(mat_2[i])
         row.append("")
-
-        while not len(mat_3[i]) == len(mat_3[1]):
-            mat_3[i].append("")
         row.extend(mat_3[i])
         master_mat.append(row)
     # pprint(master_mat)
@@ -147,13 +154,32 @@ def weekly_driver():
     week = "W"+week+"_test"
     make_snap(mat_3, mat_4, mat_6, 'AMI_Snaps', week)
 
+def driver_verbrauch():
+    cookies = login()
+    table_v_1_1 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-obst-und-gemuese/preise/verbraucherpreise-gemuese"
+    table_v_1_2 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-obst-und-gemuese/preise/verbraucherpreise-gemuese?selectedtype=2"
+    table_v_2_1 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-obst-und-gemuese/preise/verbraucherpreise-obst"
+    table_v_2_2 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-obst-und-gemuese/preise/verbraucherpreise-obst?selectedtype=2"
+    table_v_3_1 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-kartoffeln/preisenotierungen/verbraucherpreise?selectedtype=1"
+    table_v_3_2 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-kartoffeln/preisenotierungen/verbraucherpreise?selectedtype=2"
 
+    mat_1_1 = get_table(table_v_1_1, cookies)
+    mat_1_2 = get_table(table_v_1_2, cookies)
+    mat_2_1 = get_table(table_v_2_1, cookies)
+    mat_2_2 = get_table(table_v_2_2, cookies)
+    mat_3_1 = get_table(table_v_3_1, cookies)
+    mat_3_2 = get_table(table_v_3_2, cookies)
+
+    mat_1 = join_mat(mat_1_1, mat_1_2)
+    mat_2 = join_mat(mat_2_1, mat_2_2)
+    mat_3 = join_mat(mat_3_1, mat_3_2)
+
+    week = mat_1_1[1][4].split()[-1].split('.')[0]
+    week = 'V_W'+week
+    make_snap(mat_1, mat_2, mat_3, 'AMI_Snaps', week)
 
 def driver():
-    table_v_1 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-obst-und-gemuese/preise/verbraucherpreise-gemuese"
-    table_v_2 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-obst-und-gemuese/preise/verbraucherpreise-obst"
-    table_v_3 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-kartoffeln/preisenotierungen/verbraucherpreise?selectedtype=1"
-    weekly_driver()
-
+    # weekly_driver()
+    driver_verbrauch()
 
     
