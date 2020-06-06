@@ -39,12 +39,12 @@ def get_sheet(sheet):
         details[spreadsheet.title] = spreadsheet.get_all_values()
         # print(spreadsheet.get_all_values())
         print(spreadsheet.title)
-    with open('details.json', 'w') as f:
+    with open('details_daily.json', 'w') as f:
         json.dump(details, f)
     
     return details
 
-def gsheet_load(array, sheet, tab):
+def gsheet_load(array, sheet, tab, clear=False):
     scope = [
     'https://www.googleapis.com/auth/drive',
     'https://www.googleapis.com/auth/drive.file'
@@ -53,7 +53,12 @@ def gsheet_load(array, sheet, tab):
     creds = ServiceAccountCredentials.from_json_keyfile_name(file_name,scope)
     client = gspread.authorize(creds)
     spreadsheet = client.open(sheet)
-    worksheet = spreadsheet.add_worksheet(title=tab, rows="20", cols="20")
+    try:
+        worksheet = spreadsheet.add_worksheet(title=tab, rows="20", cols="20")
+    except:
+        worksheet = spreadsheet.worksheet(tab)
+    if clear:
+        worksheet.clear()
     append_rows(worksheet,array)
     print("MODIFIED")
 
@@ -149,53 +154,63 @@ def make_snap(mat_1, mat_2, mat_3, sheet, tab):
     gsheet_load(master_mat, sheet, tab)
 
 def format_daily_details(date, matrix, obi_wan_kenobi):
-    pos_1 = matrix[1].index("")
-    pos_2 = matrix[1].index("", pos_1+1)
+    print(date)
+    # print(matrix[1])
+    try:
+        pos_1 = matrix[1].index("")
+    except:
+        pos_1 = len(matrix[1])
+        pos_1 = len(matrix[1])
+    try:
+        pos_2 = matrix[1].index("", pos_1+1)
+    except:
+        pos_2 = len(matrix[1])
 
     obsts = []
     gemuses = []
     potatoes = []
 
     for i in range(1,len(matrix)):
-        for j in range(0, pos_1):
-            row = []
-            row.append(matrix[i][j])
-            obsts.append(row)
-        for j in range(pos_1+1, pos_2):
-            row = []
-            row.append(matrix[i][j])
-            gemuses.append(row)
-        for j in range(pos_2+1,len(matrix[i])):
-            row = []
-            row.append(matrix[i][j])
-            potatoes.append(row)
+        obsts.append(matrix[i][:pos_1])
+        if not pos_1 == len(matrix[1]):
+            gemuses.append(matrix[i][pos_1+1:pos_2])
+        if not pos_2 == len(matrix[1]):
+            potatoes.append(matrix[i][pos_2+1:])
 
     date = datetime.strptime(date, '%m-%d').strftime('%d%b') 
     
-    if date in obi_wan_kenobi["obst"][0]:
-        date_index = obi_wan_kenobi["obst"].index(date)
+    if date in obi_wan_kenobi["Obst"][0]:
+        date_index = obi_wan_kenobi["Obst"][0].index(date)
     else:
-        obi_wan_kenobi["obst"][0].append(date)
-        for i in range(1,obi_wan_kenobi["obst"]):
-            obi_wan_kenobi["obst"][i].append('')
+        obi_wan_kenobi["Obst"][0].append(date)
+        obi_wan_kenobi["Gemuse"][0].append(date)
+        obi_wan_kenobi["Potatoes"][0].append(date)
+        for i in range(1,obi_wan_kenobi["Obst"]):
+            obi_wan_kenobi["Obst"][i].append('')
+        for i in range(1,obi_wan_kenobi["Gemuse"]):
+            obi_wan_kenobi["Gemuse"][i].append('')
+        for i in range(1,obi_wan_kenobi["Potatoes"]):
+            obi_wan_kenobi["Potatoes"][i].append('')
     product = ""
     for obst in obsts:
-        if len(list(filter(None, obst))):
-            product = obst[0] 
+        if len(list(filter(None, obst))) == 1:
+            product = obst[0]
             continue
-        heading = product + ''.join(list(filter(None, obst[0:4])))
-        mittel = obst[-1].split()[0]
-        for obi in obi_wan_kenobi["obst"]:
-            if obi[0] == heading:
+        heading = "Obst"+ product + ''.join(list(filter(None, obst[0:4])))
+        mittel = obst[-1].replace("\n", "")
+        mittel = mittel.replace(",",".")[:-1].replace(".","",1)
+        for obi in obi_wan_kenobi["Obst"]:
+            if obi[0].replace(" ","").lower() == heading.replace(" ","").lower():
                 obi[date_index] = mittel
     product = ""
     for gemuse in gemuses:
         if len(list(filter(None, gemuse))):
             product = gemuse[0] 
             continue
-        heading = product + ''.join(list(filter(None, gemuse[0:4])))
-        mittel = gemuse[-1].split()[0]
-        for obi in obi_wan_kenobi["gemuse"]:
+        heading = "Gemuse"+product + ''.join(list(filter(None, gemuse[0:4])))
+        mittel = gemuse[-1].replace("\n", "")
+        mittel = mittel.replace(",",".")[:-1].replace(".","",1)
+        for obi in obi_wan_kenobi["Gemuse"]:
             if obi[0] == heading:
                 obi[date_index] = mittel
     product = ""
@@ -203,9 +218,10 @@ def format_daily_details(date, matrix, obi_wan_kenobi):
         if len(list(filter(None, potato))):
             product = potato[0] 
             continue
-        heading = product + ''.join(list(filter(None, potato[0:4])))
-        mittel = potato[-1].split()[0]
-        for obi in obi_wan_kenobi[["potatoes"]]:
+        heading = "Potatoes"+product + ''.join(list(filter(None, potato[0:4])))
+        mittel = potato[-1].replace("\n", "")
+        mittel = mittel.replace(",",".")[:-1].replace(".","",1)
+        for obi in obi_wan_kenobi["Potatoes"]:
             if obi[0] == heading:
                 obi[date_index] = mittel
 
@@ -214,14 +230,16 @@ def format_daily_details(date, matrix, obi_wan_kenobi):
 def add_daily():
     with open("details.json") as f:
         details = json.load(f)
-    obi_wan_kenobi = {}
-    obi_wan_kenobi["obst"] = []
-    obi_wan_kenobi["gemuse"] = []
-    obi_wan_kenobi["potatoes"] = []
+    obi_wan_kenobi = get_sheet("AMI_Daily_PG_TEST")
     for key_detail, value_detail in details.items():
         if re.match(r'\d\d-\d\d',key_detail):
             obi_wan_kenobi = format_daily_details(key_detail, value_detail, obi_wan_kenobi)
 
+    with open('obi_wan_kenobi.json', 'w') as f:
+        json.dump(obi_wan_kenobi, f)
+
+    for key, value in obi_wan_kenobi.items():
+        gsheet_load(value, "AMI_Daily_PG_TEST", key, True)
 
 
 def daily_driver():
@@ -276,6 +294,6 @@ def driver_verbrauch():
 def driver():
     # weekly_driver()
     # driver_verbrauch()
-    get_sheet('AMI_Snaps_PG')
-
+    # get_sheet('AMI_Snaps_PG')
+    add_daily()
     
