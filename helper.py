@@ -106,7 +106,7 @@ def get_table(url, cookies):
     for index in range(len(matrix)):
         while not len(matrix[index]) == len(matrix[1]):
             matrix[index].append("")
-    return matrix
+    return matrix[:-1]
 
 def get_table_cust(url, cookies):
     soup = getSoup(url, cookies)
@@ -343,6 +343,127 @@ def format_weekly_details(date, matrix, obi_wan_kenobi):
 
     return obi_wan_kenobi
 
+
+def format_verbraunch_details(date, matrix, obi_wan_kenobi):
+    print(date)
+    try:
+        pos_1 = matrix[1].index("")
+    except:
+        pos_1 = len(matrix[1])
+        pos_1 = len(matrix[1])
+    try:
+        pos_2 = matrix[1].index("", pos_1+1)
+    except:
+        pos_2 = len(matrix[1])
+
+    obsts = []
+    gemuses = []
+    potatoes = []
+
+    for i in range(1,len(matrix)):
+        obsts.append(matrix[i][:pos_1])
+        if not pos_1 == len(matrix[1]):
+            gemuses.append(matrix[i][pos_1+1:pos_2])
+        if not pos_2 == len(matrix[1]):
+            potatoes.append(matrix[i][pos_2+1:])
+
+    date = obsts[0][4].split('.')[0].replace("\n","").replace("  ", "W")
+    last_year_date = obsts[0][2].split('.')[0].replace("\n","").replace("  ", "W")
+    
+
+    if date in obi_wan_kenobi["VPreise"][0]:
+        date_index = obi_wan_kenobi["VPreise"][0].index(date)
+    else:
+        date_index = len(obi_wan_kenobi["VPreise"][0])
+        obi_wan_kenobi["VPreise"][0].append(date)
+        for i in range(1,len(obi_wan_kenobi["VPreise"])):
+            obi_wan_kenobi["VPreise"][i].append('')
+    
+    if last_year_date in obi_wan_kenobi["VPreise"][0]:
+        last_year_date_index = obi_wan_kenobi["VPreise"][0].index(last_year_date)
+    else:
+        last_year_date_index = len(obi_wan_kenobi["VPreise"][0])
+        obi_wan_kenobi["VPreise"][0].append(last_year_date)
+        for i in range(1,len(obi_wan_kenobi["VPreise"])):
+            obi_wan_kenobi["VPreise"][i].append('')
+
+    
+    for obst in obsts[1:]:
+        if not obst[0] == '' and not obst[1] == '':
+            heading = ['Obst']
+            heading.extend(obst[0:2])
+            mittel = obst[4]
+            last_yaer_mittel = obst[2]
+            try:
+                mittel = float(mittel)
+            except:
+                pass
+            found = 0
+            for obi in obi_wan_kenobi["VPreise"]:
+                if obi[0:3] == heading:
+                    obi[date_index] = mittel
+                    obi[last_year_date_index] = last_yaer_mittel
+                    found = 1
+                    break
+            if found == 0:
+                row = [''] * len(obi_wan_kenobi["VPreise"][0])
+                row[0:3] = heading
+                row[date_index] = mittel
+                row[last_year_date_index] = last_yaer_mittel
+                obi_wan_kenobi["VPreise"].append(row)
+
+    for gemuse in gemuses[1:]:
+        if not gemuse[0] == '' and not gemuse[1] == '':
+            heading = ['Gemuse']
+            heading.extend(gemuse[0:2])
+            mittel = gemuse[4]
+            last_yaer_mittel = gemuse[2]
+            try:
+                mittel = float(mittel)
+            except:
+                pass
+            found = 0
+            for obi in obi_wan_kenobi["VPreise"]:
+                if obi[0:3] == heading:
+                    obi[date_index] = mittel
+                    obi[last_year_date_index] = last_yaer_mittel
+                    found = 1
+                    break
+            if found == 0:
+                row = [''] * len(obi_wan_kenobi["VPreise"][0])
+                row[0:3] = heading
+                row[date_index] = mittel
+                row[last_year_date_index] = last_yaer_mittel
+                obi_wan_kenobi["VPreise"].append(row)
+    
+    for potato in potatoes[1:]:
+        if not potato[0] == '' and not potato[1] == '':
+            heading = ['Kartoffeln']
+            heading.extend(potato[0:2])
+            mittel = potato[4]
+            last_year_mittel = potato[2]
+            try:
+                mittel = float(mittel)
+                last_year_mittel = float(last_year_mittel)
+            except:
+                pass
+            found = 0
+            for obi in obi_wan_kenobi["VPreise"]:
+                # print(heading + " : " + obi[0:3])
+                if obi[0:3] == heading:
+                    obi[date_index] = mittel
+                    obi[last_year_date_index] = last_year_mittel
+                    found = 1
+                    break
+            if found == 0:
+                row = [''] * len(obi_wan_kenobi["VPreise"][0])
+                row[0:3] = heading
+                row[date_index] = mittel
+                row[last_year_date_index] = last_year_mittel
+                obi_wan_kenobi["VPreise"].append(row)
+
+    return obi_wan_kenobi
+
 def add_daily():
     with open("details_daily.json") as f:
         details = json.load(f)
@@ -365,6 +486,15 @@ def add_weekly():
     for key, value in obi_wan_kenobi.items():
         gsheet_load(value, "AMIPG_Weekly_TEST", key, True)
 
+def add_verbraunch():
+    with open("details_weekly.json") as f:
+        details = json.load(f)
+    obi_wan_kenobi = get_sheet("AMIPG_Weekly_TEST")
+    for key_detail, value_detail in details.items():
+        if re.match(r'V_\d\d',key_detail) and not 'V_21' == key_detail:
+            obi_wan_kenobi = format_verbraunch_details(key_detail, value_detail, obi_wan_kenobi)
+
+    gsheet_load(obi_wan_kenobi["VPreise"], "AMIPG_Weekly_TEST", "VPreise", True)
 
 def daily_driver():
     cookies = login()
@@ -394,10 +524,10 @@ def weekly_driver():
 
 def driver_verbrauch():
     cookies = login()
-    table_v_1_1 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-obst-und-gemuese/preise/verbraucherpreise-gemuese"
-    table_v_1_2 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-obst-und-gemuese/preise/verbraucherpreise-gemuese?selectedtype=2"
-    table_v_2_1 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-obst-und-gemuese/preise/verbraucherpreise-obst"
-    table_v_2_2 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-obst-und-gemuese/preise/verbraucherpreise-obst?selectedtype=2"
+    table_v_1_1 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-obst-und-gemuese/preise/verbraucherpreise-obst"
+    table_v_1_2 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-obst-und-gemuese/preise/verbraucherpreise-obst?selectedtype=2"
+    table_v_2_1 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-obst-und-gemuese/preise/verbraucherpreise-gemuese"
+    table_v_2_2 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-obst-und-gemuese/preise/verbraucherpreise-gemuese?selectedtype=2"
     table_v_3_1 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-kartoffeln/preisenotierungen/verbraucherpreise?selectedtype=1"
     table_v_3_2 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-kartoffeln/preisenotierungen/verbraucherpreise?selectedtype=2"
 
@@ -414,12 +544,13 @@ def driver_verbrauch():
 
     week = mat_1_1[1][4].split()[-1].split('.')[0]
     week = 'V_'+week
-    make_snap(mat_1, mat_2, mat_3, 'AMI_Snaps', week)
+    make_snap(mat_1, mat_2, mat_3, 'AMIPG_Snaps', week)
 
 def driver():
-    daily_driver()
+    # daily_driver()
     # weekly_driver()
     # driver_verbrauch()
     # get_sheet('AMIPG_Snaps')
     # add_daily()
     # add_weekly()
+    add_verbraunch()
