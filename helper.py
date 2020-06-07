@@ -62,6 +62,15 @@ def gsheet_load(array, sheet, tab, clear=False):
     append_rows(worksheet,array)
     print("MODIFIED")
 
+def conv_float(obi_wan_kenobi):
+    for key, values in obi_wan_kenobi.items():
+        for i, value in enumerate(values):
+            for j,v in enumerate(value):
+                try:
+                    obi_wan_kenobi[key][i][j] = float(v)
+                except:
+                    pass
+    return obi_wan_kenobi
 
 def login():
     session = requests.Session()
@@ -471,7 +480,7 @@ def add_daily():
     for key_detail, value_detail in details.items():
         if re.match(r'\d\d-\d\d',key_detail) and 'shota' not in key_detail:
             obi_wan_kenobi = format_daily_details(key_detail, value_detail, obi_wan_kenobi)
-
+    obi_wan_kenobi = conv_float(obi_wan_kenobi)
     for key, value in obi_wan_kenobi.items():
         gsheet_load(value, "TEST TABS", key, True)
 
@@ -482,7 +491,7 @@ def add_weekly():
     for key_detail, value_detail in details.items():
         if re.match(r'W_\d\d',key_detail) and 'shota' not in key_detail:
             obi_wan_kenobi = format_weekly_details(key_detail, value_detail, obi_wan_kenobi)
-
+    obi_wan_kenobi = conv_float(obi_wan_kenobi)
     for key, value in obi_wan_kenobi.items():
         gsheet_load(value, "AMIPG_Weekly_TEST", key, True)
 
@@ -490,10 +499,13 @@ def add_verbraunch():
     with open("details_weekly.json") as f:
         details = json.load(f)
     obi_wan_kenobi = get_sheet("AMIPG_Weekly_TEST")
+    with open("obi_wan_kenobi.json", "w") as f:
+        json.dump(obi_wan_kenobi, f)
     for key_detail, value_detail in details.items():
         if re.match(r'V_\d\d',key_detail) and not 'V_21' == key_detail:
             obi_wan_kenobi = format_verbraunch_details(key_detail, value_detail, obi_wan_kenobi)
-
+    
+    obi_wan_kenobi = conv_float(obi_wan_kenobi)
     gsheet_load(obi_wan_kenobi["VPreise"], "AMIPG_Weekly_TEST", "VPreise", True)
 
 def daily_driver():
@@ -551,6 +563,6 @@ def driver():
     # weekly_driver()
     # driver_verbrauch()
     # get_sheet('AMIPG_Snaps')
-    # add_daily()
-    # add_weekly()
-    add_verbraunch()
+    add_daily()
+    add_weekly()
+    # add_verbraunch()
