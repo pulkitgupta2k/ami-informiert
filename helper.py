@@ -39,8 +39,8 @@ def get_sheet(sheet):
         details[spreadsheet.title] = spreadsheet.get_all_values()
         # print(spreadsheet.get_all_values())
         print(spreadsheet.title)
-    with open('details_daily.json', 'w') as f:
-        json.dump(details, f)
+    # with open('details_weekly.json', 'w') as f:
+    #     json.dump(details, f)
     
     return details
 
@@ -99,6 +99,8 @@ def get_table(url, cookies):
     for tr in table_body.find_all('tr'):
         row = []
         for td in tr.find_all('td'):
+            for br in td.find_all("br"):
+                br.replace_with("\n")
             row.append(td.text.strip())
         matrix.append(row)
     for index in range(len(matrix)):
@@ -113,7 +115,7 @@ def get_table_cust(url, cookies):
     for tr in table_body.find_all('tr'):
         row = []
         for td in tr.find_all('td'):
-            td_str = str(td).replace("<br>", "").replace("<b>", "").replace(" colspan=\"10\"", "").replace("left b", "left")
+            td_str = str(td).replace("<br>", "\n").replace("<b>", "").replace(" colspan=\"10\"", "").replace("left b", "left")
             try:
                 value = re.findall(r"td class=\"left\"*>(.*?)<", td_str)[0]
             except:
@@ -151,7 +153,7 @@ def make_snap(mat_1, mat_2, mat_3, sheet, tab):
         row.extend(mat_3[i])
         master_mat.append(row)
     # pprint(master_mat)
-    gsheet_load(master_mat, sheet, tab)
+    gsheet_load(master_mat, sheet, tab, True)
 
 def format_daily_details(date, matrix, obi_wan_kenobi):
     print(date)
@@ -182,14 +184,15 @@ def format_daily_details(date, matrix, obi_wan_kenobi):
     if date in obi_wan_kenobi["Obst"][0]:
         date_index = obi_wan_kenobi["Obst"][0].index(date)
     else:
+        date_index = len(obi_wan_kenobi["Obst"][0])
         obi_wan_kenobi["Obst"][0].append(date)
         obi_wan_kenobi["Gemuse"][0].append(date)
         obi_wan_kenobi["Potatoes"][0].append(date)
-        for i in range(1,obi_wan_kenobi["Obst"]):
+        for i in range(1,len(obi_wan_kenobi["Obst"])):
             obi_wan_kenobi["Obst"][i].append('')
-        for i in range(1,obi_wan_kenobi["Gemuse"]):
+        for i in range(1,len(obi_wan_kenobi["Gemuse"])):
             obi_wan_kenobi["Gemuse"][i].append('')
-        for i in range(1,obi_wan_kenobi["Potatoes"]):
+        for i in range(1,len(obi_wan_kenobi["Potatoes"])):
             obi_wan_kenobi["Potatoes"][i].append('')
     product = ""
     for obst in obsts:
@@ -198,48 +201,169 @@ def format_daily_details(date, matrix, obi_wan_kenobi):
             continue
         heading = "Obst"+ product + ''.join(list(filter(None, obst[0:4])))
         mittel = obst[-1].replace("\n", "")
-        mittel = mittel.replace(",",".")[:-1].replace(".","",1)
+        mittel = mittel.replace(",",".")[:-1]
+        if mittel.count('.') > 1:
+            mittel = mittel.replace(".", "", 1)
+        try:
+            mittel = float(mittel)
+        except:
+            pass
         for obi in obi_wan_kenobi["Obst"]:
             if obi[0].replace(" ","").lower() == heading.replace(" ","").lower():
                 obi[date_index] = mittel
     product = ""
     for gemuse in gemuses:
-        if len(list(filter(None, gemuse))):
+        if len(list(filter(None, gemuse))) == 1:
             product = gemuse[0] 
             continue
         heading = "Gemuse"+product + ''.join(list(filter(None, gemuse[0:4])))
         mittel = gemuse[-1].replace("\n", "")
-        mittel = mittel.replace(",",".")[:-1].replace(".","",1)
+        mittel = mittel.replace(",",".")[:-1]
+        if mittel.count('.') > 1:
+            mittel = mittel.replace(".", "", 1)
+        try:
+            mittel = float(mittel)
+        except:
+            pass
         for obi in obi_wan_kenobi["Gemuse"]:
-            if obi[0] == heading:
+            if obi[0].replace(" ","").lower() == heading.replace(" ","").lower():
                 obi[date_index] = mittel
     product = ""
     for potato in potatoes:
-        if len(list(filter(None, potato))):
+        if len(list(filter(None, potato))) == 1:
             product = potato[0] 
             continue
-        heading = "Potatoes"+product + ''.join(list(filter(None, potato[0:4])))
+        heading_f = "Frühkartoffeln"+product + ''.join(list(filter(None, potato[0:4])))
+        heading_k = "Kartoffeln"+product + ''.join(list(filter(None, potato[0:4])))
         mittel = potato[-1].replace("\n", "")
-        mittel = mittel.replace(",",".")[:-1].replace(".","",1)
+        mittel = mittel.replace(",",".")[:-1]
+        if mittel.count('.') > 1:
+            mittel = mittel.replace(".", "", 1)
+        try:
+            mittel = float(mittel)
+        except:
+            pass
         for obi in obi_wan_kenobi["Potatoes"]:
-            if obi[0] == heading:
+            if obi[0].replace(" ","").lower() == heading_f.replace(" ","").lower() or obi[0].replace(" ","").lower() == heading_k.replace(" ","").lower():
                 obi[date_index] = mittel
 
     return obi_wan_kenobi
-    
+
+def format_weekly_details(date, matrix, obi_wan_kenobi):
+    print(date)
+    # print(matrix[1])
+    try:
+        pos_1 = matrix[1].index("")
+    except:
+        pos_1 = len(matrix[1])
+        pos_1 = len(matrix[1])
+    try:
+        pos_2 = matrix[1].index("", pos_1+1)
+    except:
+        pos_2 = len(matrix[1])
+
+    obsts = []
+    gemuses = []
+    potatoes = []
+
+    for i in range(1,len(matrix)):
+        obsts.append(matrix[i][:pos_1])
+        if not pos_1 == len(matrix[1]):
+            gemuses.append(matrix[i][pos_1+1:pos_2])
+        if not pos_2 == len(matrix[1]):
+            potatoes.append(matrix[i][pos_2+1:])
+
+    date = obsts[0][7]
+    if date in obi_wan_kenobi["Obst"][0]:
+        date_index = obi_wan_kenobi["Obst"][0].index(date)
+    else:
+        date_index = len(obi_wan_kenobi["Obst"][0])
+        obi_wan_kenobi["Obst"][0].append(date)
+        obi_wan_kenobi["Gemuse"][0].append(date)
+        obi_wan_kenobi["Potatoes"][0].append(date)
+        for i in range(1,len(obi_wan_kenobi["Obst"])):
+            obi_wan_kenobi["Obst"][i].append('')
+        for i in range(1,len(obi_wan_kenobi["Gemuse"])):
+            obi_wan_kenobi["Gemuse"][i].append('')
+        for i in range(1,len(obi_wan_kenobi["Potatoes"])):
+            obi_wan_kenobi["Potatoes"][i].append('')
+
+    product = ""
+    for obst in obsts:
+        if len(list(filter(None, obst))) == 1:
+            product = obst[0]
+            continue
+        heading = "Obst"+ product + ''.join(list(filter(None, obst[0:4])))
+        mittel = obst[-2].replace("\n", "")
+        mittel = mittel.replace(",",".")[:-1]
+        if mittel.count('.') > 1:
+            mittel = mittel.replace(".", "", 1)
+        try:
+            mittel = float(mittel)
+        except:
+            pass
+        for obi in obi_wan_kenobi["Obst"]:
+            if obi[0].replace(" ","").lower() == heading.replace(" ","").lower():
+                obi[date_index] = mittel
+    product = ""
+    for gemuse in gemuses:
+        if len(list(filter(None, gemuse))) == 1:
+            product = gemuse[0] 
+            continue
+        heading = "Gemuse"+product + ''.join(list(filter(None, gemuse[0:4])))
+        mittel = gemuse[-2].replace("\n", "")
+        mittel = mittel.replace(",",".")[:-1]
+        if mittel.count('.') > 1:
+            mittel = mittel.replace(".", "", 1)
+        try:
+            mittel = float(mittel)
+        except:
+            pass
+        for obi in obi_wan_kenobi["Gemuse"]:
+            if obi[0].replace(" ","").lower() == heading.replace(" ","").lower():
+                obi[date_index] = mittel
+    product = ""
+    for potato in potatoes:
+        if len(list(filter(None, potato))) == 1:
+            product = potato[0] 
+            continue
+        heading_f = "FrühkartoffelnFrühkartoffeln"+product + ''.join(list(filter(None, potato[0:4])))
+        heading_k = "KartoffelnKartoffeln"+product + ''.join(list(filter(None, potato[0:4])))
+        mittel = potato[-2].replace("\n", "")
+        mittel = mittel.replace(",",".")[:-1]
+        if mittel.count('.') > 1:
+            mittel = mittel.replace(".", "", 1)
+        try:
+            mittel = float(mittel)
+        except:
+            pass
+        for obi in obi_wan_kenobi["Potatoes"]:
+            if obi[0].replace(" ","").lower() == heading_f.replace(" ","").lower() or obi[0].replace(" ","").lower() == heading_k.replace(" ","").lower():
+                obi[date_index] = mittel
+
+    return obi_wan_kenobi
+
 def add_daily():
-    with open("details.json") as f:
+    with open("details_daily.json") as f:
         details = json.load(f)
-    obi_wan_kenobi = get_sheet("AMI_Daily_PG_TEST")
+    obi_wan_kenobi = get_sheet("TEST TABS")
     for key_detail, value_detail in details.items():
-        if re.match(r'\d\d-\d\d',key_detail):
+        if re.match(r'\d\d-\d\d',key_detail) and 'shota' not in key_detail:
             obi_wan_kenobi = format_daily_details(key_detail, value_detail, obi_wan_kenobi)
 
-    with open('obi_wan_kenobi.json', 'w') as f:
-        json.dump(obi_wan_kenobi, f)
+    for key, value in obi_wan_kenobi.items():
+        gsheet_load(value, "TEST TABS", key, True)
+
+def add_weekly():
+    with open("details_weekly.json") as f:
+        details = json.load(f)
+    obi_wan_kenobi = get_sheet("AMIPG_Weekly_TEST")
+    for key_detail, value_detail in details.items():
+        if re.match(r'W_\d\d',key_detail) and 'shota' not in key_detail:
+            obi_wan_kenobi = format_weekly_details(key_detail, value_detail, obi_wan_kenobi)
 
     for key, value in obi_wan_kenobi.items():
-        gsheet_load(value, "AMI_Daily_PG_TEST", key, True)
+        gsheet_load(value, "AMIPG_Weekly_TEST", key, True)
 
 
 def daily_driver():
@@ -251,21 +375,22 @@ def daily_driver():
     mat_2 = get_table(table_2, cookies)
     mat_5 = get_table_cust(table_5, cookies)
     today = datetime.today().strftime("%d-%m")
-    make_snap(mat_1, mat_2, mat_5, 'AMI_Snaps', today)
+    make_snap(mat_1, mat_2, mat_5, 'AMIPG_Snaps', today)
 
 def weekly_driver():
     cookies = login()
     table_3 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-obst-und-gemuese/preise/grossmaerkte?moart=1&purg=1%2C2%2C6%2C20%2C25%2C30%2C35%2C36%2C37%2C50%2C51%2C70%2C71%2C75%2C76%2C78%2C90%2C91%2C92%2C93%2C99%2C&prozessnr=3"
     table_4 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-obst-und-gemuese/preise/grossmaerkte?moart=2&prozessnr=3&purg=200%2C201%2C207%2C209%2C211%2C212%2C214%2C230%2C231%2C232%2C240%2C241%2C242%2C244%2C245%2C260%2C261%2C262%2C270%2C271%2C272%2C273%2C277%2C278%2C279%2C280%2C281%2C284%2C285%2C286%2C287%2C300%2C301%2C302%2C303%2C304%2C340%2C341%2C342%2C343%2C290%2C291%2C292%2C"
-    table_6 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-kartoffeln/preisenotierungen/grossmaerkte?prozessnr="
+    table_6 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-kartoffeln/preisenotierungen/grossmaerkte?prozessnr=3"
 
     mat_3 = get_table(table_3, cookies)
     mat_4 = get_table(table_4, cookies)
     mat_6 = get_table_cust(table_6, cookies)
 
+
     week = mat_3[1][-2].split("/")[-1]
-    week = "W"+week+"_test"
-    make_snap(mat_3, mat_4, mat_6, 'AMI_Snaps', week)
+    week = "W_"+week
+    make_snap(mat_3, mat_4, mat_6, 'AMIPG_Snaps', week)
 
 def driver_verbrauch():
     cookies = login()
@@ -288,12 +413,13 @@ def driver_verbrauch():
     mat_3 = join_mat(mat_3_1, mat_3_2)
 
     week = mat_1_1[1][4].split()[-1].split('.')[0]
-    week = 'V_W'+week
+    week = 'V_'+week
     make_snap(mat_1, mat_2, mat_3, 'AMI_Snaps', week)
 
 def driver():
+    daily_driver()
     # weekly_driver()
     # driver_verbrauch()
-    # get_sheet('AMI_Snaps_PG')
-    add_daily()
-    
+    # get_sheet('AMIPG_Snaps')
+    # add_daily()
+    # add_weekly()
