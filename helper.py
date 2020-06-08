@@ -25,7 +25,7 @@ def append_rows(self, values, value_input_option='RAW'):
     }
     return self.spreadsheet.values_append(self.title, params, body)
 
-def get_sheet(sheet):
+def get_sheet(sheet, make_local = False):
     scope = [
     'https://www.googleapis.com/auth/drive',
     'https://www.googleapis.com/auth/drive.file'
@@ -38,9 +38,10 @@ def get_sheet(sheet):
     for spreadsheet in spreadsheets:
         details[spreadsheet.title] = spreadsheet.get_all_values()
         # print(spreadsheet.get_all_values())
-        print(spreadsheet.title)
-    # with open('details_weekly.json', 'w') as f:
-    #     json.dump(details, f)
+        # print(spreadsheet.title)
+    if make_local:
+        with open('details.json', 'w') as f:
+            json.dump(details, f)
     
     return details
 
@@ -165,7 +166,7 @@ def make_snap(mat_1, mat_2, mat_3, sheet, tab):
     gsheet_load(master_mat, sheet, tab, True)
 
 def format_daily_details(date, matrix, obi_wan_kenobi):
-    print(date)
+    # print(date)
     # print(matrix[1])
     try:
         pos_1 = matrix[1].index("")
@@ -259,7 +260,7 @@ def format_daily_details(date, matrix, obi_wan_kenobi):
     return obi_wan_kenobi
 
 def format_weekly_details(date, matrix, obi_wan_kenobi):
-    print(date)
+    # print(date)
     # print(matrix[1])
     try:
         pos_1 = matrix[1].index("")
@@ -304,7 +305,7 @@ def format_weekly_details(date, matrix, obi_wan_kenobi):
             continue
         heading = "Obst"+ product + ''.join(list(filter(None, obst[0:4])))
         mittel = obst[-2].replace("\n", "")
-        mittel = mittel.replace(",",".")[:-1]
+        mittel = mittel.replace(",",".")
         if mittel.count('.') > 1:
             mittel = mittel.replace(".", "", 1)
         try:
@@ -321,7 +322,7 @@ def format_weekly_details(date, matrix, obi_wan_kenobi):
             continue
         heading = "Gemuse"+product + ''.join(list(filter(None, gemuse[0:4])))
         mittel = gemuse[-2].replace("\n", "")
-        mittel = mittel.replace(",",".")[:-1]
+        mittel = mittel.replace(",",".")
         if mittel.count('.') > 1:
             mittel = mittel.replace(".", "", 1)
         try:
@@ -339,7 +340,7 @@ def format_weekly_details(date, matrix, obi_wan_kenobi):
         heading_f = "FrühkartoffelnFrühkartoffeln"+product + ''.join(list(filter(None, potato[0:4])))
         heading_k = "KartoffelnKartoffeln"+product + ''.join(list(filter(None, potato[0:4])))
         mittel = potato[-2].replace("\n", "")
-        mittel = mittel.replace(",",".")[:-1]
+        mittel = mittel.replace(",",".")
         if mittel.count('.') > 1:
             mittel = mittel.replace(".", "", 1)
         try:
@@ -352,9 +353,8 @@ def format_weekly_details(date, matrix, obi_wan_kenobi):
 
     return obi_wan_kenobi
 
-
 def format_verbraunch_details(date, matrix, obi_wan_kenobi):
-    print(date)
+    # print(date)
     try:
         pos_1 = matrix[1].index("")
     except:
@@ -474,31 +474,31 @@ def format_verbraunch_details(date, matrix, obi_wan_kenobi):
     return obi_wan_kenobi
 
 def add_daily():
-    with open("details_daily.json") as f:
+    with open("details.json") as f:
         details = json.load(f)
-    obi_wan_kenobi = get_sheet("TEST TABS")
+    obi_wan_kenobi = get_sheet("AMIPG_Daily")
     for key_detail, value_detail in details.items():
         if re.match(r'\d\d-\d\d',key_detail) and 'shota' not in key_detail:
             obi_wan_kenobi = format_daily_details(key_detail, value_detail, obi_wan_kenobi)
     obi_wan_kenobi = conv_float(obi_wan_kenobi)
     for key, value in obi_wan_kenobi.items():
-        gsheet_load(value, "TEST TABS", key, True)
+        gsheet_load(value, "AMIPG_Daily", key, True)
 
 def add_weekly():
-    with open("details_weekly.json") as f:
+    with open("details.json") as f:
         details = json.load(f)
-    obi_wan_kenobi = get_sheet("AMIPG_Weekly_TEST")
+    obi_wan_kenobi = get_sheet("AMIPG_Weekly")
     for key_detail, value_detail in details.items():
         if re.match(r'W_\d\d',key_detail) and 'shota' not in key_detail:
             obi_wan_kenobi = format_weekly_details(key_detail, value_detail, obi_wan_kenobi)
     obi_wan_kenobi = conv_float(obi_wan_kenobi)
     for key, value in obi_wan_kenobi.items():
-        gsheet_load(value, "AMIPG_Weekly_TEST", key, True)
+        gsheet_load(value, "AMIPG_Weekly", key, True)
 
 def add_verbraunch():
-    with open("details_weekly.json") as f:
+    with open("details.json") as f:
         details = json.load(f)
-    obi_wan_kenobi = get_sheet("AMIPG_Weekly_TEST")
+    obi_wan_kenobi = get_sheet("AMIPG_Weekly")
     with open("obi_wan_kenobi.json", "w") as f:
         json.dump(obi_wan_kenobi, f)
     for key_detail, value_detail in details.items():
@@ -506,7 +506,7 @@ def add_verbraunch():
             obi_wan_kenobi = format_verbraunch_details(key_detail, value_detail, obi_wan_kenobi)
     
     obi_wan_kenobi = conv_float(obi_wan_kenobi)
-    gsheet_load(obi_wan_kenobi["VPreise"], "AMIPG_Weekly_TEST", "VPreise", True)
+    gsheet_load(obi_wan_kenobi["VPreise"], "AMIPG_Weekly", "VPreise", True)
 
 def daily_driver():
     cookies = login()
@@ -516,7 +516,7 @@ def daily_driver():
     mat_1 = get_table(table_1, cookies)
     mat_2 = get_table(table_2, cookies)
     mat_5 = get_table_cust(table_5, cookies)
-    today = datetime.today().strftime("%d-%m")
+    today = datetime.today().strftime("%m-%d")
     make_snap(mat_1, mat_2, mat_5, 'AMIPG_Snaps', today)
 
 def weekly_driver():
@@ -559,10 +559,13 @@ def driver_verbrauch():
     make_snap(mat_1, mat_2, mat_3, 'AMIPG_Snaps', week)
 
 def driver():
-    # daily_driver()
-    # weekly_driver()
-    # driver_verbrauch()
-    # get_sheet('AMIPG_Snaps')
+    daily_driver()
+    weekly_driver()
+    driver_verbrauch()
+    print("######## Snaps made ###########")
+    get_sheet('AMIPG_Snaps', make_local=True)
     add_daily()
+    print("######## Daily results added ###########")
     add_weekly()
-    # add_verbraunch()
+    add_verbraunch()
+    print("######## COMPLETE #############")
