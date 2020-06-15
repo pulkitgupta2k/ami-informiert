@@ -572,5 +572,4 @@ def driver():
     add_verbraunch()
     print("######## COMPLETE #############")
 
-get_sheet('AMIPG_Snaps', make_local=True)
-add_daily()
+add_weekly()
