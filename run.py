@@ -11,5 +11,9 @@ if __name__ == "__main__":
         schedule.every().friday.at(i).do(driver)
 
     while True:
-        schedule.run_pending()
+        try:
+            schedule.run_pending()
+        except:
+            pass
         time.sleep(30)
+        
