@@ -101,7 +101,6 @@ def join_mat(mat_1, mat_2):
         matrix.append(row)
     return matrix
 
-
 def get_table(url, cookies):
     soup = getSoup(url, cookies)
     matrix = []
@@ -117,7 +116,7 @@ def get_table(url, cookies):
         while not len(matrix[index]) == len(matrix[1]):
             matrix[index].append("")
 
-    if "Der Mittelwert bezieht sich" in matrix[-1]:
+    if "Der Mittelwert bezieht sich" in matrix:
         return matrix[:-1]
     else:
         return matrix
@@ -129,13 +128,12 @@ def get_table_cust(url, cookies):
     for tr in table_body.find_all('tr'):
         row = []
         for td in tr.find_all('td'):
-            td_str = str(td).replace("<br>", "\n").replace("<b>", "").replace(" colspan=\"10\"", "").replace("left b", "left")
+            td_str = str(td).replace("<br>", "\n").replace("<b>", "").replace(" colspan=\"10\"", "").replace("left b", "left").replace(" colspan=\"9\"", "")
             try:
                 value = re.findall(r"td class=\"left\"*>(.*?)<", td_str)[0]
             except:
                 value = ""
             row.append(value)
-        # print(row)
         matrix.append(row)
 
     for index in range(len(matrix)):
@@ -247,10 +245,10 @@ def format_daily_details(date, matrix, obi_wan_kenobi):
         if len(list(filter(None, potato))) == 1:
             product = potato[0] 
             continue
-        heading_f = "Frühkartoffeln"+product + ''.join(list(filter(None, potato[0:4])))
-        heading_k = "Kartoffeln"+product + ''.join(list(filter(None, potato[0:4])))
+        heading = product+product + ''.join(list(filter(None, potato[0:4])))
+        # heading_k = "Kartoffeln"+product + ''.join(list(filter(None, potato[0:4])))
         mittel = potato[-1].replace("\n", "")
-        mittel = mittel.replace(",",".")[:-1]
+        mittel = mittel.replace(",",".")
         if mittel.count('.') > 1:
             mittel = mittel.replace(".", "", 1)
         try:
@@ -258,7 +256,7 @@ def format_daily_details(date, matrix, obi_wan_kenobi):
         except:
             pass
         for obi in obi_wan_kenobi["Potatoes"]:
-            if obi[0].replace(" ","").lower() == heading_f.replace(" ","").lower() or obi[0].replace(" ","").lower() == heading_k.replace(" ","").lower():
+            if obi[0].replace(" ","").lower() == heading.replace(" ","").lower():
                 obi[date_index] = mittel
 
     return obi_wan_kenobi
@@ -514,7 +512,7 @@ def add_verbraunch():
 
 def daily_driver():
     cookies = login()
-    table_1 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-obst-und-gemuese/preise/grossmaerkte?purg=1%2C2%2C6%2C20%2C25%2C30%2C35%2C36%2C37%2C50%2C51%2C70%2C71%2C75%2C76%2C78%2C90%2C91%2C92%2C93%2C99%2"
+    table_1 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-obst-und-gemuese/preise/grossmaerkte?purg=1%2C2%2C6%2C20%2C25%2C30%2C35%2C36%2C37%2C50%2C51%2C70%2C71%2C75%2C76%2C78%2C90%2C91%2C92%2C93%2C99%2C"
     table_2 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-obst-und-gemuese/preise/grossmaerkte?moart=2&purg=200%2C201%2C207%2C209%2C211%2C212%2C214%2C230%2C231%2C232%2C240%2C241%2C242%2C244%2C245%2C260%2C261%2C262%2C270%2C271%2C272%2C273%2C277%2C278%2C279%2C280%2C281%2C284%2C285%2C286%2C287%2C300%2C301%2C302%2C303%2C304%2C340%2C341%2C342%2C343%2C290%2C291%2C292%2C"
     table_5 = "https://www.ami-informiert.de/ami-onlinedienste/markt-aktuell-kartoffeln/preisenotierungen/grossmaerkte?prozessnr=1"
     mat_1 = get_table(table_1, cookies)
@@ -573,3 +571,6 @@ def driver():
     add_weekly()
     add_verbraunch()
     print("######## COMPLETE #############")
+
+get_sheet('AMIPG_Snaps', make_local=True)
+add_daily()
