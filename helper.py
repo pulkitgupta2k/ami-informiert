@@ -116,7 +116,11 @@ def get_table(url, cookies):
     for index in range(len(matrix)):
         while not len(matrix[index]) == len(matrix[1]):
             matrix[index].append("")
-    return matrix[:-1]
+
+    if "Der Mittelwert bezieht sich" in matrix[-1]:
+        return matrix[:-1]
+    else:
+        return matrix
 
 def get_table_cust(url, cookies):
     soup = getSoup(url, cookies)
