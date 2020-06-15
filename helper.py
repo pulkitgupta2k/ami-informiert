@@ -571,5 +571,3 @@ def driver():
     add_weekly()
     add_verbraunch()
     print("######## COMPLETE #############")
-
-add_weekly()
