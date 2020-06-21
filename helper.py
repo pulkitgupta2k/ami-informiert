@@ -339,8 +339,7 @@ def format_weekly_details(date, matrix, obi_wan_kenobi):
         if len(list(filter(None, potato))) == 1:
             product = potato[0] 
             continue
-        heading_f = "FrühkartoffelnFrühkartoffeln"+product + ''.join(list(filter(None, potato[0:4])))
-        heading_k = "KartoffelnKartoffeln"+product + ''.join(list(filter(None, potato[0:4])))
+        heading = product+product + ''.join(list(filter(None, potato[0:4])))
         mittel = potato[-2].replace("\n", "")
         mittel = mittel.replace(",",".")
         if mittel.count('.') > 1:
@@ -350,7 +349,7 @@ def format_weekly_details(date, matrix, obi_wan_kenobi):
         except:
             pass
         for obi in obi_wan_kenobi["Potatoes"]:
-            if obi[0].replace(" ","").lower() == heading_f.replace(" ","").lower() or obi[0].replace(" ","").lower() == heading_k.replace(" ","").lower():
+            if obi[0].replace(" ","").lower() == heading.replace(" ","").lower():
                 obi[date_index] = mittel
 
     return obi_wan_kenobi
